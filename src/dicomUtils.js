@@ -10,6 +10,9 @@ export const TAGS_TO_ANONYMIZE = {
   'x00100030': { name: 'PatientBirthDate', group: 'Patient' },
   'x00100040': { name: 'PatientSex', group: 'Patient' },
   'x00101010': { name: 'PatientAge', group: 'Patient' },
+  'x00101040': { name: 'PatientAddress', group: 'Patient' },
+  'x00101090': { name: 'PatientMotherBirthName', group: 'Patient' },
+  'x00101075': { name: 'PatientTelephoneNumbers', group: 'Patient' },
   
   // Institution Information
   'x00080080': { name: 'InstitutionName', group: 'Institution' },
@@ -19,6 +22,23 @@ export const TAGS_TO_ANONYMIZE = {
   'x00080090': { name: 'ReferringPhysicianName', group: 'Physician' },
   'x00081050': { name: 'PerformingPhysicianName', group: 'Physician' },
   'x00081070': { name: 'OperatorsName', group: 'Physician' },
+  'x00081080': { name: 'PhysiciansOfRecord', group: 'Physician' },
+  
+  // Study and Series Information
+  'x00081030': { name: 'StudyDescription', group: 'Study' },
+  'x0008103e': { name: 'SeriesDescription', group: 'Study' },
+  'x00081030': { name: 'StudyComments', group: 'Study' },
+  'x00081038': { name: 'ImageComments', group: 'Study' },
+  
+  // Dates and Times
+  'x00080020': { name: 'StudyDate', group: 'Study' },
+  'x00080021': { name: 'SeriesDate', group: 'Study' },
+  'x00080022': { name: 'AcquisitionDate', group: 'Study' },
+  'x00080023': { name: 'ContentDate', group: 'Study' },
+  'x00080030': { name: 'StudyTime', group: 'Study' },
+  'x00080031': { name: 'SeriesTime', group: 'Study' },
+  'x00080032': { name: 'AcquisitionTime', group: 'Study' },
+  'x00080033': { name: 'ContentTime', group: 'Study' },
 };
 
 /**
@@ -146,12 +166,35 @@ export function generateAnonymizationMap(metadata, newPatientId) {
           map[tag] = 'O';
         } else if (tagInfo.name === 'PatientAge') {
           map[tag] = '000Y';
+        } else if (tagInfo.name === 'PatientAddress' || tagInfo.name === 'PatientTelephoneNumbers' || tagInfo.name === 'PatientMotherBirthName') {
+          map[tag] = '';
         }
         break;
         
       case 'Institution':
+        if (tagInfo.name === 'InstitutionAddress') {
+          map[tag] = '';
+        } else {
+          map[tag] = 'ANONYMOUS';
+        }
+        break;
+        
       case 'Physician':
         map[tag] = 'ANONYMOUS';
+        break;
+        
+      case 'Study':
+        if (tagInfo.name.includes('Comments') || tagInfo.name.includes('Description')) {
+          if (tagInfo.name.includes('Comments')) {
+            map[tag] = '';
+          } else {
+            map[tag] = 'ANONYMIZED';
+          }
+        } else if (tagInfo.name.includes('Date')) {
+          map[tag] = '20000101';
+        } else if (tagInfo.name.includes('Time')) {
+          map[tag] = '120000';
+        }
         break;
     }
   });
