@@ -6,7 +6,7 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
+
 downloads/
 eggs/
 .eggs/
@@ -224,7 +224,7 @@ out
 
 # Nuxt.js build / generate output
 .nuxt
-dist
+# dist - REMOVED for Vite/GitHub Pages deployment
 
 # Gatsby files
 .cache/
