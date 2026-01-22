@@ -8,5 +8,6 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true
-  }
+  },
+  base: './'  // Use relative paths for GitHub Pages
 });
