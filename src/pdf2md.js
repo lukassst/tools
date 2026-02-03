@@ -86,6 +86,11 @@ export async function convertPdfToMarkdown(file) {
   // Final cleanup
   markdown = cleanupText(markdown);
   
+  // Detect and wrap math symbols
+  const lines = markdown.split('\n');
+  const mathProcessedLines = detectAndWrapMath(lines);
+  markdown = mathProcessedLines.join('\n');
+  
   // Generate Table of Contents
   const toc = generateTableOfContents(markdown.split('\n'));
   markdown = toc + markdown;
@@ -261,6 +266,31 @@ function cleanupText(text) {
   if (clean.length < 2) return '';
 
   return clean;
+}
+
+function detectAndWrapMath(lines) {
+  const mathSymbols = /[ΣΔΛΦΨΓΘΩαβγδεζηθικλμνξοπρστυφχψω∂∇∫∑∏√±≤≥≠≈∈∉⊂⊃∧∨∀∃∞]/;
+  const greekLetters = /[α-ωΑ-Ω]/;
+  const mathOperators = /[±≤≥≠≈∈∉⊂⊃∧∨∀∃∂∇∫∑∏√]/;
+  
+  return lines.map(line => {
+    // Skip if already in math mode or is a header
+    if (line.includes('$') || line.startsWith('#')) return line;
+    
+    // Check for math symbols
+    if (mathSymbols.test(line) || greekLetters.test(line) || mathOperators.test(line)) {
+      // Check if it's likely a display math equation (standalone line, short)
+      const trimmed = line.trim();
+      if (trimmed.length < 100 && !trimmed.endsWith('.') && !trimmed.endsWith(',')) {
+        return `$$${line}$$`;
+      } else {
+        // Inline math - wrap the specific symbols
+        return line.replace(/[ΣΔΛΦΨΓΘΩαβγδεζηθικλμνξοπρστυφχψω∂∇∫∑∏√±≤≥≠≈∈∉⊂⊃∧∨∀∃∞]+/g, match => `$${match}$`);
+      }
+    }
+    
+    return line;
+  });
 }
 
 function generateTableOfContents(lines) {
