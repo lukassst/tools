@@ -74,14 +74,21 @@ export async function convertPdfToMarkdown(file) {
       markdown += formatLine(line.text, line.height);
     });
 
+    // Post-process each page to handle tables with coordinate data
+    markdown = postProcessMarkdown(markdown, items);
+
     // Page Separator
     if (pageNum < pdf.numPages) {
       markdown += '\n---\n\n';
     }
   }
 
-  // Post-process to remove duplicates and improve formatting
-  markdown = postProcessMarkdown(markdown);
+  // Final cleanup
+  markdown = cleanupText(markdown);
+  
+  // Generate Table of Contents
+  const toc = generateTableOfContents(markdown.split('\n'));
+  markdown = toc + markdown;
 
   return markdown;
 }
@@ -256,7 +263,30 @@ function cleanupText(text) {
   return clean;
 }
 
-function postProcessMarkdown(markdown) {
+function generateTableOfContents(lines) {
+  const toc = ["## Table of Contents\n"];
+  let hasHeaders = false;
+
+  lines.forEach(line => {
+    const match = line.match(/^(#{1,3})\s+(.+)$/);
+    if (match) {
+      const level = match[1].length;
+      const title = match[2].trim();
+      // Create a GitHub-style slug: lowercase, remove non-alphanumeric, replace spaces with hyphens
+      const slug = title.toLowerCase()
+        .replace(/[^\w\s-]/g, '')
+        .replace(/\s+/g, '-');
+      
+      const indent = '  '.repeat(level - 1);
+      toc.push(`${indent}* [${title}](#${slug})`);
+      hasHeaders = true;
+    }
+  });
+
+  return hasHeaders ? toc.join('\n') + '\n\n---\n\n' : '';
+}
+
+function postProcessMarkdown(markdown, items) {
   let lines = markdown.split('\n');
   const mergedLines = [];
 
@@ -306,7 +336,7 @@ function postProcessMarkdown(markdown) {
   }
 
   // Table detection - look for consistent columnar patterns
-  const tableBlocks = detectTables(processedLines);
+  const tableBlocks = detectTables(processedLines, items);
   if (tableBlocks.length) {
     tableBlocks.forEach(block => {
       const tableMarkdown = formatTable(block.lines);
@@ -392,40 +422,39 @@ function postProcessMarkdown(markdown) {
   return result.trim() + '\n';
 }
 
-function detectTables(lines) {
+function detectTables(lines, items) {
   const blocks = [];
   let currentBlock = null;
 
+  // Helper to get items belonging to a specific line index
+  const getLineItems = (lineStr) => items.filter(it => lineStr.includes(it.str.trim()));
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const trimmed = line.trim();
-    if (!trimmed) continue;
+    const lineItems = getLineItems(line);
+    
+    // A table row usually has multiple distinct X-starts
+    const xStarts = lineItems.map(it => Math.round(it.transform[4] / 5) * 5);
+    const uniqueStarts = [...new Set(xStarts)].sort((a, b) => a - b);
 
-    // Skip headers, emphasis, links
-    if (/^#{1,6}\s+/.test(trimmed)) continue;
-    if (/^\*.*\*$/.test(trimmed)) continue;
-    if (/^\[.*\]\(.*\)$/.test(trimmed)) continue;
-
-    const parts = trimmed.split(/\s{3,}/); // Increase to 3+ spaces
-
-    // Must have 3+ columns AND consistent column count AND reasonable length
-    if (parts.length >= 3 && parts.every(p => p.length > 0 && p.length < 50)) {
+    if (uniqueStarts.length >= 3) {
       if (!currentBlock) {
-        currentBlock = { start: i, lines: [line], colCount: parts.length };
-      } else if (Math.abs(parts.length - currentBlock.colCount) <= 1) {
-        // Allow ±1 column variation
-        currentBlock.lines.push(line);
+        currentBlock = { start: i, lines: [line], colPositions: uniqueStarts };
       } else {
-        // Column count changed too much, end block
-        if (currentBlock.lines.length >= 3) { // Require 3+ rows
-          blocks.push({ ...currentBlock, end: i - 1 });
+        // Check for alignment with the previous row's columns
+        const alignmentMatches = uniqueStarts.filter(x => 
+          currentBlock.colPositions.some(prevX => Math.abs(x - prevX) <= 10)
+        );
+
+        if (alignmentMatches.length >= 2) {
+          currentBlock.lines.push(line);
+        } else {
+          if (currentBlock.lines.length >= 3) blocks.push(currentBlock);
+          currentBlock = { start: i, lines: [line], colPositions: uniqueStarts };
         }
-        currentBlock = { start: i, lines: [line], colCount: parts.length };
       }
-    } else {
-      if (currentBlock && currentBlock.lines.length >= 3) {
-        blocks.push({ ...currentBlock, end: i - 1 });
-      }
+    } else if (currentBlock) {
+      if (currentBlock.lines.length >= 3) blocks.push(currentBlock);
       currentBlock = null;
     }
   }
