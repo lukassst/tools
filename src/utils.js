@@ -1,3 +1,9 @@
+import * as pdfjsLib from 'pdfjs-dist';
+import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
+// Use local worker bundled with Vite
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
 export function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -24,10 +30,9 @@ export function generateAnonymousId(prefix = 'ANON') {
   return `${prefix}_${timestamp}_${random}`.toUpperCase();
 }
 
-// Future DICOM utilities
 export const DICOM_TAGS_TO_ANONYMIZE = [
   'PatientName',
-  'PatientID', 
+  'PatientID',
   'PatientBirthDate',
   'PatientSex',
   'PatientAge',

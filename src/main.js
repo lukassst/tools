@@ -1,5 +1,6 @@
 import { PDFDocument } from 'pdf-lib';
 import { downloadFile, formatFileSize, generateAnonymousId } from './utils';
+import { convertPdfToMarkdown } from './pdf2md';
 import { 
   processDicomBatch, 
   analyzeDicomFiles, 
@@ -40,6 +41,17 @@ const TOOLS = {
     multiple: true,
     webkitdirectory: true,
     hint: 'All patient identifiers will be replaced with anonymous values'
+  },
+  pdf2md: {
+    title: 'PDF to Markdown',
+    description: 'Convert PDF documents to clean, structured Markdown text with preserved formatting.',
+    buttonText: 'Convert & Download',
+    icon: '📝',
+    uploadText: 'Select PDF file',
+    uploadSubtext: 'or drop PDF here',
+    accept: '.pdf',
+    multiple: false,
+    hint: null
   }
 };
 
@@ -298,6 +310,9 @@ class ToolManager {
         case 'dicom':
           await this.anonymizeDICOMs();
           break;
+        case 'pdf2md':
+          await this.convertPdfToMd();
+          break;
       }
       
       this.selectedFiles = [];
@@ -435,6 +450,32 @@ class ToolManager {
     } catch (error) {
       console.error('DICOM anonymization error:', error);
       throw error;
+    }
+  }
+
+  async convertPdfToMd() {
+    const file = this.selectedFiles[0];
+    
+    this.updateProgress(10);
+    
+    try {
+      // Convert PDF to Markdown
+      const markdown = await convertPdfToMarkdown(file);
+      
+      this.updateProgress(90);
+      
+      // Generate filename
+      const originalName = file.name.replace('.pdf', '');
+      const filename = `${originalName}.md`;
+      
+      // Download markdown file
+      downloadFile(markdown, filename, 'text/markdown');
+      
+      this.updateProgress(100);
+      
+    } catch (error) {
+      console.error('PDF to Markdown conversion error:', error);
+      throw new Error('Failed to convert PDF. The file may be corrupted or contain unsupported content.');
     }
   }
 }
