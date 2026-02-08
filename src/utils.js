@@ -1,9 +1,3 @@
-import * as pdfjsLib from 'pdfjs-dist';
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
-
-// Use local worker bundled with Vite
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-
 export function formatFileSize(bytes) {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;

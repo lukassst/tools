@@ -1,21 +1,16 @@
-# Medical Tools - PDF & DICOM Anonymizer
+# Medical Tools
 
-A modern web application for PDF manipulation and DICOM anonymization, built with Vite and ES modules.
+A modern, privacy-focused web application for document processing and medical imaging utilities. Built with Vite and ES modules — everything runs 100% in the browser.
 
 ## Features
 
-### ✅ Currently Implemented
-- **Merge PDF** - Combine multiple PDFs with drag-and-drop reordering
-- **Split PDF** - Split a PDF into individual pages
-- **PDF to Markdown** - Convert PDF documents to clean Markdown format
-- **DICOM Anonymization** - Remove patient identifiers while preserving medical imaging data
-  - Fully local processing (no data leaves your computer)
-  - Maintains PACS structure (Study/Series/SOP)
-  - ZIP export for easy storage
+- **Merge PDF** — Combine multiple PDFs with drag-and-drop reordering
+- **Split PDF** — Split a PDF into individual pages, each downloaded separately
+- **Anonymize DICOM** — Remove patient identifiers from DICOM files while preserving imaging data
+- **PDF to Markdown** — Convert PDF documents to clean, structured Markdown text
+- **Merge Markdown** — Combine multiple Markdown or text files into a single document
 
-### 🚧 Coming Soon
-- **Rotate PDF** - Rotate PDFs by 90 degrees
-- **Compress PDF** - Reduce PDF file sizes
+All tools share a consistent UI: drag-and-drop or file-picker upload, file list with reordering, progress bar, and automatic download of results.
 
 ## Setup
 
@@ -26,7 +21,7 @@ npm install
 # Run development server
 npm run dev
 
-# Build for production
+# Build for production (outputs to docs/)
 npm run build
 
 # Preview production build
@@ -36,144 +31,75 @@ npm run preview
 ## Project Structure
 
 ```
-.
-├── index.html           # Entry point
-├── package.json         # Dependencies
-├── vite.config.js       # Vite configuration
+├── index.html              # Entry point with navigation and shared layout
+├── package.json            # Dependencies and scripts
+├── vite.config.js          # Vite config (base path, output to docs/)
 └── src/
-    ├── main.js          # Main application logic
-    ├── utils.js         # Helper functions
-    └── styles.css       # Styling
+    ├── main.js             # App logic, tool definitions, ToolManager class
+    ├── pdf2md.js           # PDF-to-Markdown conversion engine
+    ├── dicomUtils.js       # DICOM parsing, anonymization, ZIP export
+    ├── utils.js            # Shared helpers (download, file size, ID generation)
+    └── styles.css          # Styling and responsive layout
 ```
 
-## DICOM Anonymization
+## Tool Details
 
-The DICOM anonymization feature replicates and modernizes the Python implementation for web use.
+### Merge PDF
 
-### How It Works
+Select two or more PDF files, reorder them via drag-and-drop, and merge into a single PDF.
 
-1. **Select DICOM files** from your PACS export
-2. **Analyze** - Shows file count, studies, series
-3. **Set Patient ID** - Enter new anonymous ID (e.g., "STUDY-001")
-4. **Process** - All identifiable information is removed locally
-5. **Download** - Get organized ZIP with anonymized files
+### Split PDF
 
-### What Gets Anonymized
+Upload a single PDF and receive each page as a separate PDF file.
 
-Based on the Python script, these tags are modified:
+### Anonymize DICOM
 
-**Patient Information:**
-- PatientName → Anonymous ID
-- PatientID → Anonymous ID  
-- PatientBirthDate → 19000101
-- PatientSex → O (Other)
-- PatientAge → 000Y
-- ClinicalTrialSubjectID → Anonymous ID
+1. Select DICOM files or a folder from a PACS export
+2. Review the analysis (file count, studies, series)
+3. Set an anonymous patient ID
+4. Download a ZIP with anonymized files organized by Study / Series / SOP
 
-**Institution/Physician:**
-- InstitutionName → ANONYMOUS
-- InstitutionAddress → ANONYMOUS
-- ReferringPhysicianName → ANONYMOUS
-- PerformingPhysicianName → ANONYMOUS
-- OperatorsName → ANONYMOUS
+**Anonymized tags include:** PatientName, PatientID, PatientBirthDate, PatientSex, PatientAge, InstitutionName, InstitutionAddress, ReferringPhysicianName, PerformingPhysicianName, OperatorsName, and more. UIDs and imaging data are preserved for postprocessing.
 
-**UIDs and imaging data are preserved** for postprocessing.
+### PDF to Markdown
 
-### File Organization
+Converts PDF documents to Markdown with:
 
-Files are organized just like the Python script:
-```
-ANON-ID/
-  ├── StudyInstanceUID/
-  │   ├── SeriesInstanceUID/
-  │   │   ├── SOPInstanceUID.dcm
-  │   │   └── ...
-```
+- Multi-column layout detection
+- Heading detection by font size and ALL-CAPS patterns
+- Table detection and formatting
+- Citation cleanup and DOI extraction
+- Math symbol wrapping
+- Auto-generated table of contents
 
-### Privacy & Security
+### Merge Markdown
 
-- ✅ **100% local processing** - nothing sent to servers
-- ✅ **Works offline** after initial load
-- ✅ **Deploy on GitHub Pages** - static hosting only
-- ✅ **No backend required** - pure client-side JavaScript
+Select two or more `.md`, `.markdown`, `.txt`, `.text`, or `.mdx` files, reorder via drag-and-drop, and merge into a single Markdown file. Files are concatenated with horizontal rule (`---`) separators.
 
-## PDF to Markdown Conversion
+## Privacy & Security
 
-A high-quality browser-based PDF to Markdown converter that handles complex documents with professional-grade accuracy.
-
-### How It Works
-
-1. **Upload PDF** - Drag and drop or select PDF files
-2. **Process** - Text extraction and structure analysis
-3. **Download** - Get clean, formatted Markdown output
-
-### Quality Assessment
-
-**Professional-grade conversion with ~90% accuracy for complex documents.**
-
-✅ **Strengths:**
-- Preserves structure (titles, authors, DOIs)
-- Handles multi-column layouts
-- Detects and formats tables
-- Clean text extraction with proper paragraph merging
-- Maintains citations and scientific terminology
-
-⚠️ **Limitations:**
-- Some headers may not be detected (non-standard formatting)
-- Table formatting can be messy from complex PDF layouts
-- Figure references preserved but images not extracted
-
-**Performance vs Alternatives:**
-| Tool | Quality | Speed | Cost |
-|------|---------|-------|------|
-| **This Tool** | 90% | Instant | Free |
-| Adobe Acrobat | 85% | Slow | $15/mo |
-| Pandoc | 75% | Fast | Free |
-
-**Verdict:** Production-ready for 90%+ of documents (reports, forms, articles). The remaining quality gains would require heavy ML models and significant performance tradeoffs.
-
-### Key Features
-
-- **100% browser-based** - No server required
-- **Fast processing** - Instant conversion for most documents
-- **Table detection** - Automatically formats tables
-- **Citation cleanup** - Removes broken references
-- **Privacy-focused** - Documents never leave your browser
-
-## Why Vite?
-
-- ⚡ Lightning-fast HMR (Hot Module Replacement)
-- 📦 ES modules - native browser support
-- 🔧 Simple configuration
-- 🚀 Optimized production builds
-- 💾 Dynamic imports for pdf-lib (loaded only when needed)
+- **100% local processing** — no data leaves your browser
+- **Works offline** after initial page load
+- **No backend required** — pure client-side JavaScript
+- **Deployable on GitHub Pages** — static files only
 
 ## Technologies
 
-- **Vite** - Build tool and dev server
-- **pdf-lib** - PDF manipulation
-- **dicom-parser** - DICOM file parsing and modification
-- **JSZip** - ZIP file creation for DICOM exports
-- **ES Modules** - Modern JavaScript
-- **CSS3** - Modern styling with gradients and animations
+- **Vite** — Build tool and dev server
+- **pdf-lib** — PDF creation, merging, and splitting
+- **pdfjs-dist** — PDF text extraction for Markdown conversion
+- **dicom-parser** — DICOM file parsing and tag modification
+- **JSZip** — ZIP file creation for DICOM exports
 
-## Deployment to GitHub Pages
+## Deployment
 
-This app can be deployed to GitHub Pages for free public hosting:
+The app builds to the `docs/` folder for GitHub Pages deployment:
 
 ```bash
-# Build for production
 npm run build
-
-# The dist/ folder can be deployed to GitHub Pages
-# All processing happens in the browser - no backend needed!
 ```
 
-### Why This Works for GitHub Pages:
-- Static files only (HTML, CSS, JS)
-- No server-side processing required
-- All DICOM anonymization happens in the browser
-- Perfect for secure, private medical data processing
+Push the `docs/` folder to your repository and enable GitHub Pages from the `docs/` directory in your repo settings. The base path is configured as `/tools/` in `vite.config.js`.
 
 ## License
 

@@ -52,6 +52,17 @@ const TOOLS = {
     accept: '.pdf',
     multiple: false,
     hint: null
+  },
+  mergemd: {
+    title: 'Merge Markdown files',
+    description: 'Combine multiple Markdown or text files into a single document in your preferred order.',
+    buttonText: 'Merge Markdown files',
+    icon: '📑',
+    uploadText: 'Select Markdown or text files',
+    uploadSubtext: 'or drop .md / .txt files here',
+    accept: '.md,.markdown,.txt,.text,.mdx',
+    multiple: true,
+    hint: 'Drag and drop files to reorder them before merging'
   }
 };
 
@@ -162,6 +173,11 @@ class ToolManager {
       // Accept any file for DICOM - let the parser validate
       // DICOM files may not have extensions or have various extensions
       validFiles = validFiles; // Accept all files
+    } else if (this.currentTool === 'mergemd') {
+      const mdExtensions = ['.md', '.markdown', '.txt', '.text', '.mdx'];
+      validFiles = validFiles.filter(f => 
+        mdExtensions.some(ext => f.name.toLowerCase().endsWith(ext))
+      );
     } else {
       // For PDF tools, strictly check PDF type
       validFiles = validFiles.filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
@@ -312,6 +328,9 @@ class ToolManager {
           break;
         case 'pdf2md':
           await this.convertPdfToMd();
+          break;
+        case 'mergemd':
+          await this.mergeMarkdown();
           break;
       }
       
@@ -477,6 +496,29 @@ class ToolManager {
       console.error('PDF to Markdown conversion error:', error);
       throw new Error('Failed to convert PDF. The file may be corrupted or contain unsupported content.');
     }
+  }
+
+  async mergeMarkdown() {
+    if (this.selectedFiles.length < 2) {
+      throw new Error('Please select at least 2 Markdown or text files to merge.');
+    }
+
+    const parts = [];
+
+    for (let i = 0; i < this.selectedFiles.length; i++) {
+      const file = this.selectedFiles[i];
+      const text = await file.text();
+      parts.push(text.trimEnd());
+
+      this.updateProgress(((i + 1) / this.selectedFiles.length) * 90);
+      await new Promise(resolve => setTimeout(resolve, 30));
+    }
+
+    const merged = parts.join('\n\n---\n\n') + '\n';
+
+    this.updateProgress(100);
+
+    downloadFile(merged, 'merged_document.md', 'text/markdown');
   }
 }
 

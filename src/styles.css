@@ -252,3 +252,35 @@ body {
     margin-bottom: 10px;
     font-style: italic;
 }
+
+.progress-text {
+    text-align: center;
+    font-size: 14px;
+    color: #6c757d;
+    margin-top: 6px;
+}
+
+.order-hint {
+    color: #6c757d;
+    font-size: 14px;
+    margin-bottom: 10px;
+    font-style: italic;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .nav-container {
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .nav-menu {
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .nav-item {
+        padding: 6px 10px;
+        font-size: 14px;
+    }
+}
